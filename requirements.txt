@@ -1,0 +1,5 @@
+streamlit
+yagmail
+streamlit_lottie
+selenium
+
