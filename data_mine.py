@@ -4,6 +4,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
+import csv
 class DT_MINE():
     def __init__(self):
         self.result=[]
@@ -19,7 +20,7 @@ class DT_MINE():
         password=self.driver.find_element(By.ID, "password")
         password.send_keys("user1234")
         password.send_keys(Keys.RETURN)
-        time.sleep(20)
+        time.sleep(5)
     def searching(self,job_tittle,location):
         self.driver.get("https://www.linkedin.com/jobs")
     
@@ -42,18 +43,35 @@ class DT_MINE():
         time.sleep(5)
     def data(self):
         jobs = self.driver.find_elements(By.XPATH, "//li[contains(@class, 'occludable-update') and contains(@class, 'scaffold-layout__list-item')]")
-        
-        for job in jobs[:20]:
+        list_of_jobs=[]
+        for job in jobs[:10]:
             try:
+                self.driver.execute_script("arguments[0].scrollIntoView();", job)
+                time.sleep(1)
+                my_list=[]
                 title= WebDriverWait(job, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, "a.job-card-list__title--link"))).get_attribute("aria-label")
-                #company = job.find_element(By.CSS_SELECTOR, '.job-card-container__company-name').text
-                #location = job.find_element(By.CSS_SELECTOR, '.job-card-container__metadata-item').text
-                print(f"{title}")
+                my_list.append(title)
+                company = WebDriverWait(job, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR,"div.artdeco-entity-lockup__subtitle"))).text
+                my_list.append(company)
+                location = WebDriverWait(job, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR,"div.artdeco-entity-lockup__caption"))).text
+                link= WebDriverWait(job, 10).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "a.job-card-list__title--link"))).get_attribute("href")
+                
+                loc,type=location.split("(")
+                type=type[:-1]
+                my_list.append(loc)
+                my_list.append(type)
+                my_list.append(link)
+                list_of_jobs.append(my_list)
+            
             except Exception as e:
                 pass
+        with open ("jobs.csv",mode="w",encoding="utf-8-sig",newline='') as file:
+            writer=csv.writer(file)
+            writer.writerow(["Titel","Name of Company","Location","Type","Link"])
+            writer.writerows(list_of_jobs)
 
-bot=DT_MINE()
-bot.login()
-bot.searching("C programming","Hong Kong SAR")
-bot.data()
+

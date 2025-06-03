@@ -31,6 +31,6 @@ def loading_searching():
     
     with st.spinner("searching...."):
         st_lottie(lottie_loading, height=200, key="loading")
-        time.sleep(5)
+        time.sleep(2)
 
-    st.success("done")
+    

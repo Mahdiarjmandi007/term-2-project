@@ -1,5 +1,8 @@
 import streamlit as st
 from verify_code import *
+from loadings import *
+from data_mine import *
+
 
 
 #class of Users
@@ -68,24 +71,63 @@ class page2(pages):
         super().__init__("page2")
     def display(self):
         col1,col2,col3=st.columns(3)
-        col2.title("LINKDIN")
-        st.header("verify code was sent your email !! ")
-        st.header("Please Enter the code!")
-        input_verify_code=st.text_input("Enter Here")
-        if st.button("Done"):
-            if input_verify_code:
-                if (input_verify_code != st.session_state.verify_code0):
-                    st.error("verify code is not correct !! please check the email again")
-                else:
+        col2.title("LINEKDIN")
+        st.header("verify code was sent your email!!")
+        st.header("please enter the code ")
+        input_code=st.text_input("Enter Here")
+        if st.button("done"):
+            if input_code:
+                if (input_code != st.session_state.verify_code):
+                    st.error("verify code is not correct !! \n please check the email")
+                else :
                     self.go_to("page3")
             else:
                 st.warning("please fill the box") #matn ro baad dorost kon
+             
 class page3(pages):
     def __init__(self):
         super().__init__("page3")
+        self.job_searched=""
+        self.lacation=""
     def display(self):
-        st.title("Hello")
-
+        st.markdown("""
+    <style>
+        .title-text {
+            color: #007BFF; /* آبی شیک */
+            text-align: center;
+            font-size: 60px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+""", unsafe_allow_html=True)
+        col1,col2,col3=st.columns(3)
+        with col2:
+            col2.markdown("<div class='title-text'>LINKEDIN</div>", unsafe_allow_html=True)
+        st.markdown("<br><br>", unsafe_allow_html=True)   
+        coll1,coll2,coll3=st.columns(3)
+        with coll1:
+            self.job_searched=coll1.text_input("Search jobs:",placeholder="search Here.....")
+            self.lacation=coll1.text_input("location:",placeholder="Here.....")
+            if st.button("done"):
+                if self.job_searched and self.lacation:
+                    st.session_state.loading_page = page_loadings(self.job_searched,self.lacation)
+                    
+                    self.go_to("page_loading")
+                else:
+                    st.warning("please fill the boxes")
+class page_loadings(pages):
+    def __init__(self,job_searched,location):
+        super().__init__("page_loading")
+        self.job_searched = job_searched
+        self.location = location
+    def display(self):
+        loading_searching()
+        bot=DT_MINE()
+        bot.login()
+        bot.searching(self.job_searched, self.location)
+        bot.data()
+        self.go_to("page4")
 
 if "page" not in st.session_state:
     st.session_state.page = "home"
@@ -96,6 +138,9 @@ elif st.session_state.page == "page2":
     page = page2()
 elif st.session_state.page == "page3":
     page=page3()
+elif st.session_state.page=="page_loading":
+    page = st.session_state.get("loading_page", page_loadings("", ""))
+
 
 page.display()   
 
