@@ -3,4 +3,6 @@ yagmail
 streamlit_lottie
 selenium
 csv
+pandas
+
 

@@ -2,6 +2,8 @@ import streamlit as st
 from verify_code import *
 from loadings import *
 from data_mine import *
+import pandas as pd
+
 
 
 
@@ -108,11 +110,12 @@ class page3(pages):
         coll1,coll2,coll3=st.columns(3)
         with coll1:
             self.job_searched=coll1.text_input("Search jobs:",placeholder="search Here.....")
-            self.lacation=coll1.text_input("location:",placeholder="Here.....")
+            self.location=coll1.text_input("location:",placeholder="Here.....")
             if st.button("done"):
-                if self.job_searched and self.lacation:
-                    st.session_state.loading_page = page_loadings(self.job_searched,self.lacation)
-                    
+                if self.job_searched and self.location:
+                    st.session_state.job_searched = self.job_searched
+                    st.session_state.location = self.location
+                    st.session_state.loading_page = page_loadings(self.job_searched,self.location)
                     self.go_to("page_loading")
                 else:
                     st.warning("please fill the boxes")
@@ -123,11 +126,29 @@ class page_loadings(pages):
         self.location = location
     def display(self):
         loading_searching()
-        bot=DT_MINE()
-        bot.login()
-        bot.searching(self.job_searched, self.location)
-        bot.data()
-        self.go_to("page4")
+        if "data_mined" not in st.session_state:
+            with st.spinner("Searching and Extracting ......."):
+                bot = DT_MINE()
+                bot.run(self.job_searched, self.location)
+
+            st.session_state.data_mined = True  
+            st.session_state.page = "page4"
+                   
+
+class page4(pages):
+    def __init__(self):
+        super().__init__("page4")
+    def display(self):
+        for key in ["data_mined", "job_searched", "location", "loading_page"]:
+            st.session_state.pop(key, None)
+        st.title("🔍 Job Results")
+        
+        try:
+            df = pd.read_csv("jobs.csv")
+            st.dataframe(df, use_container_width=True)
+        except FileNotFoundError:
+            st.error("error to read file")
+
 
 if "page" not in st.session_state:
     st.session_state.page = "home"
@@ -138,9 +159,12 @@ elif st.session_state.page == "page2":
     page = page2()
 elif st.session_state.page == "page3":
     page=page3()
+elif st.session_state.page=="page4":
+    page=page4()
 elif st.session_state.page=="page_loading":
-    page = st.session_state.get("loading_page", page_loadings("", ""))
-
+    job = st.session_state.get("job_searched", "")
+    loc = st.session_state.get("location", "")
+    page = page_loadings(job, loc)  
 
 page.display()   
 

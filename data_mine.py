@@ -5,31 +5,45 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import time
 import csv
+import pickle
+
 class DT_MINE():
     def __init__(self):
         self.result=[]
         self.driver=webdriver.Firefox()
+        self.wait = WebDriverWait(self.driver, 15)
     def login(self):
-        
-        
-        self.driver.get("https://www.linkedin.com/login")
+        self.driver.get("https://www.linkedin.com")
+        time.sleep(2)
 
-        username=self.driver.find_element(By.ID,"username")
-        username.send_keys("arjmandipython@gmail.com")
-        time.sleep(5)
-        password=self.driver.find_element(By.ID, "password")
-        password.send_keys("user1234")
-        password.send_keys(Keys.RETURN)
-        time.sleep(5)
+        try:
+            with open("linkedin_cookies.pkl", "rb") as f:
+                cookies = pickle.load(f)
+
+            for cookie in cookies:
+                if 'sameSite' in cookie:
+                    if cookie['sameSite'] == 'None':
+                        cookie['sameSite'] = 'Strict'
+                self.driver.add_cookie(cookie)
+
+            self.driver.refresh()
+
+            self.wait.until(EC.presence_of_element_located((By.ID, "global-nav-search")))
+            print("login was successful")
+
+        except Exception as e:
+            print("❌ error for login with cookies", e)
+        
+        
     def searching(self,job_tittle,location):
         self.driver.get("https://www.linkedin.com/jobs")
     
-        what_input = self.driver.find_element(By.CSS_SELECTOR, "input[aria-label='Search by title, skill, or company']")
+        what_input = self.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[aria-label='Search by title, skill, or company']")))
         what_input.clear()
         what_input.send_keys(job_tittle)
         time.sleep(1)
 
-        where_input = self.driver.find_element(By.CSS_SELECTOR, "input[aria-label='City, state, or zip code']")
+        where_input = self.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[aria-label='City, state, or zip code']")))
         where_input.clear()
         where_input.send_keys(location)
         time.sleep(1)
@@ -38,14 +52,60 @@ class DT_MINE():
         where_input.send_keys(Keys.RETURN)
         time.sleep(1)
 
-        what_input = self.driver.find_element(By.CSS_SELECTOR, "input[aria-label='Search by title, skill, or company']")
+        what_input = self.wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "input[aria-label='Search by title, skill, or company']")))
         what_input.send_keys(Keys.RETURN)
-        time.sleep(5)
+        time.sleep(1)
+    
     def data(self):
-        jobs = self.driver.find_elements(By.XPATH, "//li[contains(@class, 'occludable-update') and contains(@class, 'scaffold-layout__list-item')]")
+        jobs = self.wait.until(EC.presence_of_all_elements_located(
+            (By.XPATH, "//li[contains(@class, 'occludable-update') and contains(@class, 'scaffold-layout__list-item')]")
+        ))
         list_of_jobs=[]
+        seen_titles = set()
+        index=0
+        scroll_container = self.wait.until(EC.presence_of_element_located((By.CLASS_NAME, "jobs-search-results-list")))
+        while len(list_of_jobs)<20:
+            jobs = self.wait.until(EC.presence_of_all_elements_located(
+            (By.XPATH, "//li[contains(@class, 'occludable-update') and contains(@class, 'scaffold-layout__list-item')]")
+        ))
+            job=jobs[index]
+            try:
+                self.driver.execute_script("arguments[0].scrollIntoView();", job)
+                time.sleep(1)
+
+                title = job.find_element(By.CSS_SELECTOR, "a.job-card-list__title--link").get_attribute("aria-label")
+                if title in seen_titles:
+                    index+=1
+                    continue
+                seen_titles.add(title)
+
+                company = job.find_element(By.CSS_SELECTOR, "div.artdeco-entity-lockup__subtitle").text
+                location = job.find_element(By.CSS_SELECTOR, "div.artdeco-entity-lockup__caption").text
+                link = job.find_element(By.CSS_SELECTOR, "a.job-card-list__title--link").get_attribute("href")
+
+                loc, type_ = location.split("(")
+                type_ = type_[:-1]
+
+                list_of_jobs.append([title, company, loc.strip(), type_.strip(), link])
+                index+=1
+                self.driver.execute_script("arguments[0].scrollTop += 150;", scroll_container)
+                time.sleep(1)
+
+            except Exception as e:
+                print(e)
+                continue
+
+        with open("jobs.csv", mode="w", encoding="utf-8-sig", newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(["Title", "Name of Company", "Location", "Type", "Link"])
+            writer.writerows(list_of_jobs)
+        self.driver.quit()
+        
+        """
         for job in jobs[:10]:
             try:
+                jobs = self.wait.until(EC.presence_of_all_elements_located(
+                    (By.XPATH, "//li[contains(@class, 'occludable-update') and contains(@class, 'scaffold-layout__list-item')]")))
                 self.driver.execute_script("arguments[0].scrollIntoView();", job)
                 time.sleep(1)
                 my_list=[]
@@ -71,7 +131,18 @@ class DT_MINE():
                 pass
         with open ("jobs.csv",mode="w",encoding="utf-8-sig",newline='') as file:
             writer=csv.writer(file)
-            writer.writerow(["Titel","Name of Company","Location","Type","Link"])
-            writer.writerows(list_of_jobs)
+            writer.writerow(["Title","Name of Company","Location","Type","Link"])
+            writer.writerows(list_of_jobs)"""
+
+    def run(self,job,location):
+        self.status="No"
+        self.job=job
+        self.location=location
+        self.login()
+        self.searching(job,location)
+        self.data()
+        
+bot=DT_MINE()
+bot.run("python","united states")
 
 
