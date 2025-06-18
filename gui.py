@@ -1,6 +1,6 @@
 import streamlit as st
 from verify_code import *
-from loadings import *
+from loadings import ss,loading_searching
 from data_mine import *
 import pandas as pd
 
@@ -129,10 +129,14 @@ class page_loadings(pages):
         if "data_mined" not in st.session_state:
             with st.spinner("Searching and Extracting ......."):
                 bot = DT_MINE()
-                bot.run(self.job_searched, self.location)
-
-            st.session_state.data_mined = True  
-            st.session_state.page = "page4"
+                if bot.state=="run":
+                    bot.run(self.job_searched, self.location)
+                if bot.state=="done":
+                    ss["value"]="YES"
+                    st.session_state.page = "page4"
+                
+ 
+            
                    
 
 class page4(pages):

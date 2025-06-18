@@ -7,12 +7,15 @@ import time
 import csv
 import pickle
 
+
 class DT_MINE():
     def __init__(self):
         self.result=[]
+        self.state="run"
         self.driver=webdriver.Firefox()
         self.wait = WebDriverWait(self.driver, 15)
     def login(self):
+        
         self.driver.get("https://www.linkedin.com")
         time.sleep(2)
 
@@ -63,17 +66,27 @@ class DT_MINE():
         list_of_jobs=[]
         seen_titles = set()
         index=0
-        scroll_container = self.wait.until(EC.presence_of_element_located((By.CLASS_NAME, "jobs-search-results-list")))
+        #scroll_container = self.wait.until(EC.presence_of_element_located((By.CLASS_NAME, "div.jobs-search-results-list")))
+        time.sleep(5)
+        number_job=1
         while len(list_of_jobs)<20:
+            
             jobs = self.wait.until(EC.presence_of_all_elements_located(
             (By.XPATH, "//li[contains(@class, 'occludable-update') and contains(@class, 'scaffold-layout__list-item')]")
         ))
-            job=jobs[index]
+            try :
+                job=jobs[index]
+            except IndexError:
+                print("errored jobs is done")
+                self.state="done"
+                return
+
+
             try:
                 self.driver.execute_script("arguments[0].scrollIntoView();", job)
                 time.sleep(1)
 
-                title = job.find_element(By.CSS_SELECTOR, "a.job-card-list__title--link").get_attribute("aria-label")
+                title = job.find_element(By.CSS_SELECTOR, "a.job-card-container__link").get_attribute("aria-label")
                 if title in seen_titles:
                     index+=1
                     continue
@@ -88,8 +101,10 @@ class DT_MINE():
 
                 list_of_jobs.append([title, company, loc.strip(), type_.strip(), link])
                 index+=1
-                self.driver.execute_script("arguments[0].scrollTop += 150;", scroll_container)
+                self.driver.execute_script("window.scrollBy(0, 150);")
                 time.sleep(1)
+                print("job",number_job,": success full")
+                number_job+=1
 
             except Exception as e:
                 print(e)
@@ -100,6 +115,7 @@ class DT_MINE():
             writer.writerow(["Title", "Name of Company", "Location", "Type", "Link"])
             writer.writerows(list_of_jobs)
         self.driver.quit()
+        self.state="done"
         
         """
         for job in jobs[:10]:
@@ -142,7 +158,6 @@ class DT_MINE():
         self.searching(job,location)
         self.data()
         
-bot=DT_MINE()
-bot.run("python","united states")
+
 
 
