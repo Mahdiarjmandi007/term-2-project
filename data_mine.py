@@ -3,6 +3,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.firefox.service import Service as FirefoxService
+from selenium.webdriver.firefox.options import Options as FirefoxOptions
 import time
 import csv
 import pickle
@@ -12,8 +14,10 @@ class DT_MINE():
     def __init__(self):
         self.result=[]
         self.state="run"
-        self.driver=webdriver.Firefox()
-        self.wait = WebDriverWait(self.driver, 15)
+        service = FirefoxService(executable_path="geckodriver.exe",port=5555)
+        options = FirefoxOptions()
+        self.driver = webdriver.Firefox(service=service, options=options)
+        self.wait = WebDriverWait(self.driver, 30)
     def login(self):
         
         self.driver.get("https://www.linkedin.com")
@@ -114,8 +118,10 @@ class DT_MINE():
             writer = csv.writer(file)
             writer.writerow(["Title", "Name of Company", "Location", "Type", "Link"])
             writer.writerows(list_of_jobs)
+        with open("done.flag", "w") as f:
+            f.write("done")
+
         self.driver.quit()
-        self.state="done"
         
         """
         for job in jobs[:10]:

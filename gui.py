@@ -3,6 +3,8 @@ from verify_code import *
 from loadings import ss,loading_searching
 from data_mine import *
 import pandas as pd
+import threading
+import os
 
 
 
@@ -125,20 +127,21 @@ class page_loadings(pages):
         self.job_searched = job_searched
         self.location = location
     def display(self):
-        loading_searching()
-        if "data_mined" not in st.session_state:
-            with st.spinner("Searching and Extracting ......."):
-                bot = DT_MINE()
-                if bot.state=="run":
-                    bot.run(self.job_searched, self.location)
-                if bot.state=="done":
-                    ss["value"]="YES"
-                    st.session_state.page = "page4"
-                
- 
-            
-                   
+        st.markdown("## ⏳ Mining data from LinkedIn... Please wait.")
 
+        if not st.session_state.get("mining_started", False):
+            def mine_data():
+                loading_searching()
+                bot = DT_MINE()
+                bot.run(self.job_searched, self.location)
+            thread = threading.Thread(target=mine_data)
+            thread.start()
+            st.session_state.mining_started = True
+        if st.button("Show Job Results"):
+                st.session_state.page = "page4"
+                st.rerun()
+        
+        
 class page4(pages):
     def __init__(self):
         super().__init__("page4")
