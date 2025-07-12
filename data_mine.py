@@ -118,8 +118,7 @@ class DT_MINE():
             writer = csv.writer(file)
             writer.writerow(["Title", "Name of Company", "Location", "Type", "Link"])
             writer.writerows(list_of_jobs)
-        with open("done.flag", "w") as f:
-            f.write("done")
+        
 
         self.driver.quit()
         
