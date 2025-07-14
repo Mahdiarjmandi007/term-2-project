@@ -81,9 +81,9 @@ class DT_MINE():
             try :
                 job=jobs[index]
             except IndexError:
-                print("errored jobs is done")
-                self.state="done"
-                return
+                print(f"errored jobs done or something happening")
+                
+                break
 
 
             try:

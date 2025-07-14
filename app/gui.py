@@ -4,7 +4,6 @@ from loadings import ss,loading_searching
 from data_mine import *
 import pandas as pd
 import threading
-import os
 
 
 
