@@ -130,7 +130,6 @@ class page_loadings(pages):
 
         if not st.session_state.get("mining_started", False):
             def mine_data():
-                loading_searching()
                 bot = DT_MINE()
                 bot.run(self.job_searched, self.location)
             thread = threading.Thread(target=mine_data)

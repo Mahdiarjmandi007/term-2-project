@@ -8,6 +8,7 @@ from selenium.webdriver.firefox.options import Options as FirefoxOptions
 import time
 import csv
 import pickle
+import sqlite3
 
 
 class DT_MINE():
@@ -154,6 +155,27 @@ class DT_MINE():
             writer=csv.writer(file)
             writer.writerow(["Title","Name of Company","Location","Type","Link"])
             writer.writerows(list_of_jobs)"""
+    def create_DB(self):
+        connect=sqlite3.connect("job_DataBase.db")
+        cursor=connect.cursor()
+        cursor.execute("""
+CREATE TABLE IF NOT EXISTS tablejob (
+                       Title TEXT,
+                       Name_OF_Company TEXT,
+                       Location TEXT,
+                       Type TEXT,
+                       Link TEXT
+)                     
+""")
+        with open("jobs.csv" , newline="" ,encoding="utf-8") as csvfile:
+            reader=csv.reader(csvfile)
+            next(reader)
+            for row in reader :
+                cursor.execute("INSERT INTO tablejob (Title,Name_OF_Company,Location,Type,Link) VALUES (?,?,?,?,?)",row)
+        connect.commit()
+        connect.close()
+
+        
 
     def run(self,job,location):
         self.status="No"
@@ -162,6 +184,7 @@ class DT_MINE():
         self.login()
         self.searching(job,location)
         self.data()
+        self.create_DB()
         
 
 
